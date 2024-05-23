@@ -1,0 +1,5 @@
+#!/bin/bash 
+dir="/home/cargo/getopic"
+if [ ! -d "$dir" ];then 
+    mkdir $dir
+fi

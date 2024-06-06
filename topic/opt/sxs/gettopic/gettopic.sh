@@ -1,12 +1,16 @@
 #!/bin/bash 
 GT_BASEDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+if [ ! -f "${GT_BASEDIR}/gettopic.sh." ]; then
+  OB_BASEDIR="$(grep -E  '[e|E]xec' /usr/share/applications/*ettopic.desktop|head -n 1 |grep -oE '\s[a-z\/]+\.sh')"
+fi
 export GT_BASHDIR
 cd "${GT_BASEDIR}" || exit 1
 source ${GT_BASEDIR}/tasks/public.sh
 
 ############################################################################
-GT_echo "green" "请输入车辆ID: "
-read -er num
+
+
+read -er -p "请输入车辆ID: " num
 if ( timeout 5 ping -c 1 100.100.100.$num > /dev/null )
 then 
     GT_echo "green" "车辆网络正常"
@@ -69,6 +73,9 @@ do
         start_time=$(date +"%s")
         create_jpg
         ret=$?
+    ;;
+    4)
+        exit 0
     ;;
     esac
     if [ ! "${ret}" == 0 ]

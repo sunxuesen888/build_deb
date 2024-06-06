@@ -2,22 +2,22 @@
 role=`cat /opt/cargo/acu/info/type`
 orin1A="192.168.5.48"
 orin1B="192.168.5.64"
-single_camera_path="/opt/cargo/camera/tools/3_pictures_Single_orin"
-back_camera_orinb_1A="/opt/cargo/camera/tools/2_pictures_4orin/0_1A_pics/orinb"
-back_camera_orinb_1B="/opt/cargo/camera/tools/2_pictures_4orin/1_1B_pics/orinb"
+picture="/tmp/pic"
 
 if [ ${role} = "orin_single_A" ];then 
-    cd $single_camera_path
-    for file in $(ls *.sh)
-do 
-	bash $file &>/dev/null &
-	pid=$!
-	sleep 2
-	kill -9 $pid &>/dev/null 
-done
+    cd ${picture} && bash $picture/front_car_pic.sh &>/dev/null
 elif [ ${role} = "4orin_B" ];then 
-    scp /tmp/follow_orinb_pic_1A.sh $orin1A:/tmp
-    ssh $orin1A "bash /tmp/follow_orinb_pic_1A.sh > /dev/null"
-    scp /tmp/follow_orinb_pic_1B.sh $orin1B:/tmp
-    ssh $orin1B "bash /tmp/follow_orinb_pic_1B.sh > /dev/null"
+   #orin1a拷贝jpg生成脚本并执行 
+    ssh ${orin1A} -t -q -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" "[ ! -d ${picture} ] && mkdir ${picture}"
+    scp ${picture}/follow_orinb_pic_1A.sh $orin1A:${picture}
+    ssh ${orin1A} "cd ${picture} && bash ${picture}/follow_orinb_pic_1A.sh &>/dev/null" 
+    [ ! -d ${picture}/orin1A ] && mkdir ${picture}/orin1A
+    scp ${orin1A}:${picture}/*.jpg ${picture}/orin1A
+
+    #orin1b拷贝jpg生成脚本并执行    
+    ssh ${orin1B} -t -q -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" "[ ! -d ${picture} ] && mkdir ${picture} "
+    scp ${picture}/follow_orinb_pic_1B.sh $orin1B:${picture}
+    ssh ${orin1B} "cd ${picture} && bash ${picture}/follow_orinb_pic_1B.sh &>/dev/null" 
+      [ ! -d ${picture}/orin1B ] && mkdir ${picture}/orin1B
+    scp ${orin1B}:${picture}/*.jpg ${picture}/orin1B
 fi

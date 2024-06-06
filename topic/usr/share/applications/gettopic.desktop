@@ -4,7 +4,7 @@ Name=get Topic
 GenericName=Get Topic
 GenericName[zh_CN]=Topic获取
 Comment[zh_CN]=Topic获取
-Exec=/usr/bin/gnome-terminal --window -t cargo --class=cargo --name=cargo --hide-menubar --maximize -e /opt/sxs/gettopic/getTopic.sh
+Exec=/usr/bin/gnome-terminal --window -t cargo --class=cargo --name=cargo --hide-menubar --maximize -e /opt/sxs/gettopic/gettopic.sh
 StartupNotify=true
 Terminal=false
 Icon=/opt/sxs/gettopic/topic.jpeg

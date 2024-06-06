@@ -3,7 +3,7 @@ GT_BASHDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export GT_BASHDIR
 cd "${GT_BASHDIR}" || exit 1
 #####################################
-export role_ID=$(cat /opt/cargo/acu/info/type)
+#export role_ID=$(cat /opt/cargo/acu/info/type)
 export GT_NC='\033[0;0m'
 export GT_RED='\033[0;31m'
 export GT_GREEN='\033[0;32m'
@@ -16,6 +16,7 @@ export result=""
 export camera_path=""
 export time="$(date +%Y%m%d%H%M%S)"
 export orin1A="192.168.5.48"
+export picture_path="/tmp/pic"
 ################
 function GT_echo {
     RAW=1 
@@ -103,31 +104,37 @@ function prompt(){
     echo "1. 获取异常topic"
     echo "2. 下载jpg文件"
     echo "3. 生成jpg文件"
+    echo "4. 退出"
 }
 
 function download_pic(){
+   
     case ${OB_RUNTIME_MACHINE} in 
     "ORIN_B")
-       sshpass -p $SUDOPASSWORD  scp ${GT_BASHDIR}/tasks/download_back.sh cargo@$orin_0:/tmp
-       sshpass -p "${SUDOPASSWORD}" ssh -t -q -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" cargo@$orin_0 "bash /tmp/download_back.sh" 
-        echo "下载至orin完成"
-        echo "开始下载只本地"
-        if [ ! -d ${GT_BASHDIR}/1A_${time} ];then 
-        mkdir ${GT_BASHDIR}/1A_${time}
-        fi 
-        if [ ! -d ${GT_BASEDIR}/1B_${time} ];then 
-        mkdir ${GT_BASEDIR}/1B_${time}
-        fi 
-        sshpass -p $SUDOPASSWORD  scp cargo@$orin_0:/tmp/orin1A/*.jpg ${GT_BASHDIR}/1A_${time}/
-        sshpass -p $SUDOPASSWORD  scp cargo@$orin_0:/tmp/orin1B/*.jpg ${GT_BASHDIR}/1B_${time}/
+        
+       if ! sshpass -p $SUDOPASSWORD ssh -t -q -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" cargo@$orin_0 \
+       "[ ! -d ${picture_path}/orin1A ] && [ ! -d ${picture_path}/orin1B ] && echo "jpg文件未生成,请先生成jpg文件"";then 
+           echo "正在下载camera JPG文件,请耐心等待"
+           mkdir ${GT_BASHDIR}/ORINB_1A_${time}
+           sshpass -p $SUDOPASSWORD  scp cargo@$orin_0:${picture_path}/orin1A/*.jpg ${GT_BASHDIR}/ORINB_1A_${time}
+           mkdir ${GT_BASHDIR}/ORINB_1B_${time}
+           sshpass -p $SUDOPASSWORD  scp cargo@$orin_0:${picture_path}/orin1B/*.jpg ${GT_BASHDIR}/ORINB_1B_${time}
+       fi
+  
+
+
 
     ;;
     "ORIN_C")
         echo "此车是c样"
     ;;
     "ORIN_single")
-     
-     sshpass -p $SUDOPASSWORD  scp cargo@$orin_0:${camera_path}/*.jpg ${GT_BASHDIR}/${time}/
+     if ! sshpass -p $SUDOPASSWORD ssh -t -q -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" cargo@$orin_0 \
+       "[ ! -e ${picture_path} ]  && echo "jpg文件未生成,请先生成jpg文件"";then 
+        echo "正在下载camera JPG文件,请耐心等待"
+        mkdir ${GT_BASHDIR}/front_${time}
+        sshpass -p $SUDOPASSWORD  scp cargo@$orin_0:${picture_path}/*.jpg ${GT_BASHDIR}/front_${time}
+     fi
     ;;
     esac
  
@@ -135,9 +142,16 @@ function download_pic(){
 }
 
 function create_jpg(){
-   sshpass -p $SUDOPASSWORD  scp ${GT_BASHDIR}/tasks/generate_jpg.sh ${GT_BASHDIR}/tasks/follow_orinb_pic_1A.sh ${GT_BASHDIR}/tasks/follow_orinb_pic_1B.sh cargo@$orin_0:/tmp
-   
-   sshpass -p "${SUDOPASSWORD}" ssh -t -q -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" cargo@$orin_0 "bash /tmp/generate_jpg.sh > /dev/null" 
+    echo "正在生成camera JPG文件,请耐心等待"
+    if [ ${OB_RUNTIME_MACHINE} != "ORIN_C" ];then 
+   sshpass -p $SUDOPASSWORD ssh -t -q -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" cargo@$orin_0 "[ ! -d ${picture_path} ] && mkdir ${picture_path}"
+   sshpass -p $SUDOPASSWORD  scp ${GT_BASHDIR}/tasks/generate_jpg.sh ${GT_BASHDIR}/tasks/front_car_pic.sh ${GT_BASHDIR}/tasks/follow_orinb_pic_1A.sh \
+   ${GT_BASHDIR}/tasks/follow_orinb_pic_1B.sh  cargo@$orin_0:${picture_path}
+   sshpass -p "${SUDOPASSWORD}" ssh -t -q -o "StrictHostKeyChecking=no" -o "UserKnownHostsFile=/dev/null" cargo@$orin_0 "bash ${picture_path}/generate_jpg.sh " 
+    else 
+        echo "此车是c样"
+    fi
+    
 }
 
 
